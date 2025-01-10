@@ -1,0 +1,250 @@
+---
+title: "Getting Started with GenePack"
+author: "Luca Lepore"
+date: "2024-08-12"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with GenePack}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction to GenePack
+
+The **GenePack** package provides a comprehensive set of S4 classes to represent various human gene types, including both protein-coding and non-coding genes. The package includes constructors, validators, and accessor functions to manage and modify the gene objects created. Each gene object can store its essential information, particularly the Ensembl ID, HUGO symbol, name, description, gene structure, and gene product (the product ID and sequence). In this implementation, each transcript isoform is treated as a separate gene, using the Ensembl transcript ID instead of the Ensembl gene ID to simplify the representation and management of gene products, and provide more flexibility.
+
+The classes provided by GenePack are organized as follows:
+'ProteinCodingGene';
+'LncRNAGene';
+'HousekeepingRNAGene': 'RRNAGene', 'TRNAGene';
+'SncRNAGene': 'MicroRNAGene', 'SiRNAGene', 'PiRNAGene', 'SnRNAGene', 'SnoRNAGene'.
+
+The HousekeepingRNAGene and SncRNAGene classes are virtual classes that inherit from the Gene class. They are provided to biologically group their derived classes. This design makes easier potential future updates and the introduction of new functionalities.
+
+This vignette will guide the user in the usage of the GenePack package, showing how to create and manipulate gene objects, validate gene products, and manage various gene types.
+
+
+# Installation
+
+```{r}
+# install.packages("GenePack_1.0.0.tar.gz", repos = NULL, type = "source")
+
+# Load
+library(GenePack)
+```
+
+
+# Creating a Gene object
+
+All the gene classes available in this package are specialized classes deriving from a general virtual Gene class. The Gene class sets the common parameters among all the derived classes with the related internal validations. These include the Ensembl transcript ID, HUGO Symbol, name, description, tissue specificity, gene structure, and clinical significance. The gene product argument is class-specific and managed within each derived class instead. 
+
+The 'gene_structure' and 'gene_product' arguments are complex object and should be created separately by the user before constructing the Gene object. This approach maximizes flexibility, allowing the user to better exploit the functionalities provided by the GenomicRanges package without predefined constraints in the constructor. 
+By separating the creation of these parameters, the creation of the gene object becomes more manageable and improves mantainability of the code. In addition, the possibility to reuse the 'gene_structure' and 'gene_product' objects in other contexts avoids code duplications and increases efficiency.   
+
+
+## Creating the GRanges object
+
+An example regarding the creation of a **GRanges** object (the gene structure) is shown below. The **GenomicRanges** library is included in the package and can be directly used as follows or it can be explicitly imported calling library(GenomicRanges). In this case, the GRanges object belongs to a long non-coding rna. After the creation, it can be passed in the constructor of the Gene class to create the Gene object. 
+
+```{r}
+lncrnagene_structure <- GenomicRanges::GRanges(seqnames = "chr1",
+                        ranges = IRanges::IRanges(start = 200, end = 1200), 
+                        strand = "+")
+```
+
+
+## Creating the gene_product list and the final Gene object
+
+An example regarding the creation of the gene product and the final Gene object is shown below. All the parameters are provided, but just 'id', 'hugo_symbol', 'gene_structure', 'gene_product' are mandatory.
+
+```{r}
+lncrnagene_product <- list(lncrna_id = "lncRNAID", 
+                             lncrna_sequence = 
+                                paste0(
+            "AUGCUUAGCGUACGGUAGGCUUAACUGCGUACGAUCGAUCGGCUAAUCGGCUUAGCGUA",
+            "CGGUAGGCUUAACUGCGUACGAUCGAUCGGCUAAGCGUACGGUAGGCUUAACUGCGUAC",
+            "GAUCGAUCGGCUUAGCGUACGUAGGCUCAACUGCGUACGAUCGAUCGGCUUAGCGUACG",
+            "GUAGGCUUAACUGCGGACGAUCGAUCGGCUUAGCGUACGGUAGGCUUAACUGCGUACGA",
+            "UCGAUCGC"))
+  
+lncrna_gene <- GenePack::createLncRNAGene(id = "ENST00005859745",
+                hugo_symbol = "SYMBOL1",
+                name = "lncRNA gene name",
+                description = "gene description",
+                tissue_specificity = list("liver", "small bowel"),
+                gene_structure = lncrnagene_structure,
+                gene_product = lncrnagene_product,
+                clinical_significance = "association with bowel cancer")
+```
+
+
+## Further examples 
+
+One example for each main Gene class is provided below.
+
+**ProteinCodingGene object**
+
+```{r}
+codinggene_structure <- GenomicRanges::GRanges(seqnames = "chr1",
+                        ranges = IRanges::IRanges(start = 200, end = 1200), 
+                        strand = "+")
+  
+codinggene_product <- list(protein_id = "proteinID", 
+                           protein_sequence = paste0(
+                  "MEEPQSDPSVEPPLSQETFSDLWKLLPENNVTELTKVEPPEVPVNGPAAANLL",
+                  "GGQMKKLGFLHSGTAKSVTCTYSPALNKLTENSSEKGSITRRRCFEGIKTM"))
+  
+proteincoding_gene <- GenePack::createProteinCodingGene(id = "ENST00005859745",
+                      hugo_symbol = "SYMBOL1",
+                      name = "protein-coding gene name",
+                      description = "gene description",
+                      tissue_specificity = list("liver", "small bowel"),
+                      gene_structure = codinggene_structure,
+                      gene_product = codinggene_product,
+                      clinical_significance = "association with bowel cancer")
+```
+
+**MicroRNAGene object**
+
+```{r}
+micrornagene_structure <- GenomicRanges::GRanges(seqnames = "chr1",
+                          ranges = IRanges::IRanges(start = 200, end = 1200), 
+                          strand = "+")
+  
+micrornagene_product <- list(microrna_id = "micrornaID", 
+                             microrna_sequence = "UGAGGUAGUAGGUUGUAUAGUU")
+  
+microrna_gene <- GenePack::createMicroRNAGene(id = "ENST00005859745",
+                 hugo_symbol = "SYMBOL1",
+                 name = "microRNA gene name",
+                 description = "gene description",
+                 tissue_specificity = list("liver", "small bowel"),
+                 gene_structure = micrornagene_structure,
+                 gene_product = micrornagene_product,
+                 clinical_significance = "association with bowel cancer")
+```
+
+**RRNAGene object**
+
+```{r}
+rrnagene_structure <- GenomicRanges::GRanges(seqnames = "chr1",
+                      ranges = IRanges::IRanges(start = 200, end = 1200), 
+                      strand = "+")
+  
+rrnagene_product <- list(rrna_id = "rrnaID", 
+                         rrna_sequence = paste0(
+            "GAGCCCGGCGUCCCGUCUCAGACCCGGCCGACAGGAGGGGUGGAGUGGGUGUGUGCGUG",
+            "UGGAGGAGGGUGUGGUGGUGCGGUGUGGUGGGCGUGUGAGUGUGUGGCGCGUGGAGGAG"))
+  
+rrna_gene <- GenePack::createRRNAGene(id = "ENST00005859745",
+             hugo_symbol = "SYMBOL1",
+             name = "rRNA gene name",
+             description = "gene description",
+             tissue_specificity = list("liver", "small bowel"),
+             gene_structure = rrnagene_structure,
+             gene_product = rrnagene_product,
+             clinical_significance = "association bowel cancer")
+```
+
+
+# Accessing and modifying gene objects information
+
+GenePack also provides accessor functions to access and modify information within the gene objects created in order to avoid directly interactions with the objects' slots. This guarantees a robust way to update gene information preserving data integrity.
+
+## Examples 
+
+Examples regarding the mandatory arguments are provided below.
+
+**Get and Set Ensembl ID**
+
+```{r}
+GenePack::getID(lncrna_gene)
+
+GenePack::setID(lncrna_gene) <- "ENST00005859750"
+GenePack::getID(lncrna_gene)
+
+```
+
+**Get and Set HUGO Symbol**
+
+```{r}
+GenePack::getHugoSymbol(lncrna_gene)
+
+GenePack::setHugoSymbol(lncrna_gene) <- "NEWSYMBOL1"
+GenePack::getHugoSymbol(lncrna_gene)
+```
+
+**Get and Set Gene structure**
+
+```{r}
+GenePack::getGeneStructure(lncrna_gene)
+
+
+new_gene_structure2 <- GenomicRanges::GRanges(seqnames = "chr1",
+                       ranges = IRanges::IRanges(start = 205, end = 1210),
+                       strand = "+")
+
+GenePack::setGeneStructure(lncrna_gene) <- new_gene_structure2
+GenePack::getGeneStructure(lncrna_gene)
+```
+
+**Get and Set product ID**
+
+```{r}
+GenePack::getProductID(lncrna_gene)
+
+GenePack::setProductID(lncrna_gene) <- "newlncRNAID"
+GenePack::getProductID(lncrna_gene)
+```
+
+**Get and Set product sequence**
+
+```{r}
+GenePack::getProductSequence(lncrna_gene)
+
+
+seq <- paste0(
+  "AUGCUUAGCGUACGGUAGGCUUAACUGCGUACGAUCGAUCGGCUAAUCGGCUUAGCGUACGGUAGG",
+  "CUUAACUGCGUACGAUCGAUCGGCUAAGCGUACGGUAGGCUUAACUGCGUACGAUCGAUCGGCUUAGCGUAC",
+  "GUAGGCUCAACUGCGUACGAUCGAUCGGCUUAGCGUACGGUAGGCUUAACUGCGGACGAUCGAUCGGCUUAG",
+  "CGUACGGUAGGCUUAACUGCGUACGAUCGAUCGC")
+
+GenePack::setProductSequence(lncrna_gene) <- seq
+GenePack::getProductSequence(lncrna_gene)
+```
+
+
+# Computing the product gene length
+
+An example regarding the use of the **lengthProduct** function is provided below. The function is applied on the lncrna_gene object previously created. In the same way, the function can be applied to all the other gene objects. It computes the gene product sequence length counting the number of nucleotides or amino acids, depending on the gene object.  
+
+```{r}
+computed_length <- GenePack::lengthProduct(lncrna_gene)
+```
+
+
+# Displaying the gene object information
+
+An example regarding the use of the **showGeneObject** function is shown. The function is applied on the lncrna_gene object previously created. In the same way, the function can be applied to all the other gene objects.
+
+```{r}
+GenePack::showGeneObject(lncrna_gene)
+```
+
+
+# Conclusion
+
+The **GenePack** package provides a comprehensive set of S4 classes to represent various human gene types, including both protein-coding and non-coding genes, along with a series of functions to create, manage and modify the gene objects created. This vignette has provided users crucial information and examples to effectively use this package. 
+For more detailed information regarding the classes, functions, and additional examples, please refer to the package documentation.
+
+
+# Session Info
+
+```{r}
+sessionInfo()
+```
+

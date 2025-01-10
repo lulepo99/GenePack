@@ -1,0 +1,27 @@
+Package: GenePack
+Title: Package for Gene Objects which Represent Different Gene Types
+Version: 1.0.0
+Authors@R: person(given = "Luca", family = "Lepore", 
+  email = "luca1.lepore@mail.polimi.it", role = c("aut", "cre"))
+Description: Provides a comprehensive set of S4 classes to represent various 
+  human gene types, including both protein-coding and non-coding genes. 
+  The package includes constructors, validators, and accessor functions to 
+  manage and modify the gene objects created. Each gene object can store 
+  its essential information, particularly the Ensembl transcript ID, HUGO 
+  symbol, name, description, gene structure, and gene product 
+  (the product ID and sequence). In this implementation, each 
+  transcript isoform is treated as a separate gene, using the Ensembl 
+  transcript ID to simplify the representation and management of gene 
+  products, and provide more flexibility.
+License: GPL-3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Depends: R (>= 4.4)
+Imports: methods, GenomicRanges, IRanges
+biocViews: Software, GeneExpression, Transcriptomics, RNASeq
+VignetteBuilder: knitr
+Suggests: testthat (>= 3.2.2), knitr, rmarkdown, devtools
+Config/testthat/edition: 3
+URL: https://github.com/lulepo99/GenePack
+BugReports: https://github.com/lulepo99/GenePack/issues
